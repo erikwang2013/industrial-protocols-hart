@@ -2,7 +2,7 @@
 
 > [中文](README.md)
 
-erikwang2013/industrial-protocols-hart — 纯 PHP implementation, category: Fieldbus.
+HART 协议包 — 4-20mA FSK 调制解调器通信，支持 PV/回路电流/设备信息读取。Pure PHP implementation, compatible with 6 PHP runtimes via kernel framework adapters.
 
 ## Installation
 
@@ -10,33 +10,65 @@ erikwang2013/industrial-protocols-hart — 纯 PHP implementation, category: Fie
 composer require erikwang2013/industrial-protocols-kernel erikwang2013/industrial-protocols-hart
 ```
 
-> This package depends on [erikwang2013/industrial-protocols-kernel](https://github.com/erikwang2013/industrial-protocols), which provides connection management, protocol registry, coroutine adaptation, event system and more.
+> Depends on [erikwang2013/industrial-protocols-kernel](https://github.com/erikwang2013/industrial-protocols-kernel) for connection management, protocol registry, coroutine adaptation, event system and more.
+
+## Architecture
+
+Built on kernel SDK interfaces (ProtocolInterface/ConnectorInterface/DriverInterface/FrameInterface), with HartDriver for transport and HartConnector for unified ConnectorInterface.
+
+## Features
+
+Complete hart protocol frame encode/decode, driver transport, Connector wrapper, health check, connection strategies (Lazy/Eager/Pooled)
+
+## Supported Frameworks
+
+Compatible with 6 PHP runtimes via kernel framework adapters: Laravel (ServiceProvider+Facade+artisan), Webman (config/plugin auto-discovery+ProtocolProcess), Hyperf (ConfigProvider+DI+KernelFactory), ThinkPHP (services.php+IndustrialProtocolsService), Yii2 (Bootstrap+component), Plain PHP (direct Kernel instantiation)
+
+### Laravel
+
+```php
+// AppServiceProvider::boot()
+$kernel = app(Kernel::class);
+$kernel->getProtocolRegistry()->register(new ModbusProtocol());
+$kernel->boot();
+$conn = $kernel->getConnectionManager()->connect('device-id');
+```
+
+### Webman
+
+Auto-boot via ProtocolProcess on worker start. Configure at `config/plugin/erikwang2013/industrial-protocols-kernel/config/industrial-protocols.php`.
+
+### Hyperf
+
+```php
+$kernel = \Hyperf\Context\ApplicationContext::getContainer()->get(Kernel::class);
+```
 
 ## Usage
 
 ```php
-use Erikwang2013\IndustrialProtocols\Kernel;
-$kernel = new Kernel(['config_path' => __DIR__ . '/industrial-protocols.php']);
-$kernel->boot();
-
-// Connect via ConnectionManager
-$conn = $kernel->getConnectionManager()->connect('device-id');
-$result = $conn->read('address');
+$conn = $kernel->getConnectionManager()->connect('hart-device');
+$pv      = $conn->read('pv');               // primary variable
+$current = $conn->read('loop_current');      // loop current (mA)
+$info    = $conn->read('device_info');       // device info
 ```
 
-> This package depends on [erikwang2013/industrial-protocols-kernel](https://github.com/erikwang2013/industrial-protocols), which provides connection management, protocol registry, coroutine adaptation, event system and more.
+## Configuration
 
-## Features
+```php
+'devices' => [
+    'device-id' => [
+        'protocol' => 'hart',
+        'host'     => '192.168.1.10',
+        'port'     => 0,
+        'timeout'  => 3000,
+    ],
+],
+```
 
-HART 帧编解码(前导码+定界符+地址+命令+数据+校验和)、FSK 1200 baud 串口通信、读取主变量(PV)/回路电流/设备信息
+## Adapter Vendors
 
-## Architecture
-
-串口(UART via HART modem) + HartFrame 帧编解码 + HartDriver 驱动，实现 6 个 SDK 接口
-
-## Protocol Support
-
-HART 4-20mA FSK (HART 调制解调器)
+Pepperl+Fuchs (KFD2-HMM-16 HART Multiplexer), Softing (FG-200), Emerson (AMS Device Manager)
 
 ## Requirements
 
@@ -44,16 +76,12 @@ HART 4-20mA FSK (HART 调制解调器)
 - Composer
 - erikwang2013/industrial-protocols-kernel
 
-## License
-
-MIT — Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
-
-
----
-
 ## Related Links
 
 - [Industrial Protocols Main Project](https://github.com/erikwang2013/industrial-protocols)
 - [Kernel](https://github.com/erikwang2013/industrial-protocols-kernel)
 - [All 42 Protocol Packages](https://github.com/erikwang2013/industrial-protocols#supported-protocols)
 
+## License
+
+MIT — Copyright (c) 2026 erik <erik@erik.xyz> — https://erik.xyz
