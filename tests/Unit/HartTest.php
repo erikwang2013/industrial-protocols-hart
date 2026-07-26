@@ -15,7 +15,7 @@ class HartTest extends TestCase
     {
         $p = new HartProtocol();
         $this->assertSame('hart', $p->getName());
-        $this->assertSame('1.0.0', $p->getVersion());
+        $this->assertSame('1.1.1', $p->getVersion());
         $this->assertContains('serial', $p->getSupportedVariants());
         $this->assertContains('multidrop', $p->getSupportedVariants());
         $this->assertSame(0, $p->getDefaultPort());
